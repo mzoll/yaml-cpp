@@ -15,6 +15,7 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <experimental/type_traits>
 
 
 namespace YAML {
@@ -89,6 +90,26 @@ inline NodeType::value Node::Type() const {
 
 // access
 
+//BEGIN experimental
+template <typename...>
+using void_t = void;
+
+// Primary template handles all types not supporting the operation.
+template <typename, template <typename> class, typename = void_t<>>
+struct detect : std::false_type {};
+
+// Specialization recognizes/validates only types supporting the archetype.
+template <typename T, template <typename> class Op>
+struct detect<T, Op, void_t<Op<T>>> : std::true_type {};
+
+template <typename T>
+using is_new_api_t = decltype(T::decodex());
+
+template <typename T>
+using has_newApi = detect<T, is_new_api_t>;
+//END experimental
+
+
 // template helpers
 template <typename T, typename S>
 struct as_if {
@@ -99,7 +120,7 @@ struct as_if {
     if (!node.m_pNode)
       return fallback;
 
-    if (! (std::declval<>(&convert<T>::new_api)) ) { //FIXME it breaks here
+    if (! has_newApi<convert<T>>::value ) {
       T t;
       if (convert<T>::decode(node, t))
         return t;
@@ -160,6 +181,13 @@ struct as_if<T, void> {
   T operator()() const {
     if (!node.m_pNode)
       throw TypedBadConversion<T>(node.Mark());
+
+    if (! has_newApi<convert<T>>::value ) {
+      T t;
+      if (convert<T>::decode(node, t))
+        return t;
+      throw TypedBadConversion<T>(node.Mark());
+    }
 
     try {
       return convert<T>::decodex(node);
