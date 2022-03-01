@@ -14,6 +14,7 @@
 #include "yaml-cpp/node/node.h"
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 
 namespace YAML {
@@ -98,8 +99,15 @@ struct as_if {
     if (!node.m_pNode)
       return fallback;
 
+    if (! (std::declval<>(&convert<T>::new_api)) ) { //FIXME it breaks here
+      T t;
+      if (convert<T>::decode(node, t))
+        return t;
+      return fallback;
+    }
+
     try {
-      return convert<T>::decode(node);
+      return convert<T>::decodex(node);
     } catch (const conversion::DecodeException& e) {
       return fallback;
     } catch (...) {
@@ -154,7 +162,7 @@ struct as_if<T, void> {
       throw TypedBadConversion<T>(node.Mark());
 
     try {
-      return convert<T>::decode(node);
+      return convert<T>::decodex(node);
     } catch(const conversion::DecodeException& e) {
       throw TypedBadConversion<T>(node.Mark());
     } catch (...) {

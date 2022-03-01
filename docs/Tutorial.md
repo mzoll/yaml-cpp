@@ -178,7 +178,7 @@ struct convert<Vec3> {
     return node;
   }
 
-  static Vec3 decode(const Node& node) {
+  static Vec3 decodex(const Node& node) {
     if(!node.IsSequence() || node.size() != 3) {
       throw YAML::conversion::DecodeException("");
     }
@@ -187,7 +187,7 @@ struct convert<Vec3> {
     rhs.x = node[0].as<double>();
     rhs.y = node[1].as<double>();
     rhs.z = node[2].as<double>();
-    return true;
+    return rhs;
   }
 };
 }
