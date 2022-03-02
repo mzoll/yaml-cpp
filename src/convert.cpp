@@ -38,6 +38,40 @@ bool IsFlexibleCase(const std::string& str) {
 }  // namespace
 
 namespace YAML {
+bool convert<bool>::decode(const Node& node, bool& rhs) {
+  if (!node.IsScalar())
+    return false;
+
+  // we can't use iostream bool extraction operators as they don't
+  // recognize all possible values in the table below (taken from
+  // http://yaml.org/type/bool.html)
+  static const struct {
+    std::string truename, falsename;
+  } names[] = {
+      {"y", "n"},
+      {"yes", "no"},
+      {"true", "false"},
+      {"on", "off"},
+  };
+
+  if (!IsFlexibleCase(node.Scalar()))
+    return false;
+
+  for (const auto& name : names) {
+    if (name.truename == tolower(node.Scalar())) {
+      rhs = true;
+      return true;
+    }
+
+    if (name.falsename == tolower(node.Scalar())) {
+      rhs = false;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool convert<bool>::decodex(const Node& node) {
   if (!node.IsScalar())
     throw YAML::conversion::DecodeException();
