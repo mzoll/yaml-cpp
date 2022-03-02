@@ -48,18 +48,28 @@ struct Vec3 {
     return x == rhs.x && y == rhs.y && z == rhs.z;
   }
 };
+//
+//class NonDefCtorVec3 : public Vec3 {
+//  using Vec3::x;
+//  using Vec3::y;
+//  using Vec3::z;
+// public:
+//  NonDefCtorVec3(double x, double y, double z)
+//      : Vec3() {
+//     this->x=x;
+//     this->y=y;
+//     this->z=z;
+//  };
+//  bool operator==(const NonDefCtorVec3& rhs) const {
+//    return x == rhs.x && y == rhs.y && z == rhs.z;
+//  }
+//};
 
-class NonDefCtorVec3 : public Vec3 {
-  using Vec3::x;
-  using Vec3::y;
-  using Vec3::z;
+class NonDefCtorVec3 {
+  double x, y, z;
  public:
   NonDefCtorVec3(double x, double y, double z)
-      : Vec3() {
-     this->x=x;
-     this->y=y;
-     this->z=z;
-  };
+    : x(x), y(y), z(z) {};
   bool operator==(const NonDefCtorVec3& rhs) const {
     return x == rhs.x && y == rhs.y && z == rhs.z;
   }
@@ -74,6 +84,13 @@ class NonDefCtorVec3 : public Vec3 {
 //    return x == rhs.x && y == rhs.y && z == rhs.z;
 //  }
 //};
+
+
+
+
+
+
+
 
 }  // anonymous namespace
 
