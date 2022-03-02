@@ -65,6 +65,15 @@ class NonDefCtorVec3 : public Vec3 {
   }
 };
 
+//class NonDefCtorVec3 {
+//  double x, y, z;
+// public:
+//  NonDefCtorVec3(double x, double y, double z)
+//    : x(x), y(y), z(z) {};
+//  bool operator==(const NonDefCtorVec3& rhs) const {
+//    return x == rhs.x && y == rhs.y && z == rhs.z;
+//  }
+//};
 
 }  // anonymous namespace
 
@@ -107,13 +116,9 @@ struct convert<Vec3> {
 
 template <>
 struct convert<NonDefCtorVec3> {
-  static constexpr bool new_apix{true};
-  typedef std::integral_constant<bool, true> new_api;
-
-
-  static Node encode(const NonDefCtorVec3& rhs) {
-    return convert<Vec3>::encode(rhs);
-  }
+//  static Node encode(const NonDefCtorVec3& rhs) {
+//    return convert<Vec3>::encode(rhs);
+//  }
 
   static NonDefCtorVec3 decodex(const Node& node) {
     if (!node.IsSequence() || node.size() != 3) {

@@ -69,6 +69,13 @@ template <>
 struct convert<std::string> {
   static Node encode(const std::string& rhs) { return Node(rhs); }
 
+  static bool decode(const Node& node, std::string& rhs) {
+    if (!node.IsScalar())
+      return false;
+    rhs = node.Scalar();
+    return true;
+  }
+
   static std::string decodex(const Node& node) {
     if (!node.IsScalar())
       throw YAML::conversion::DecodeException();
@@ -262,6 +269,8 @@ template <>
 struct convert<bool> {
   static Node encode(bool rhs) { return rhs ? Node("true") : Node("false"); }
 
+  YAML_CPP_API static bool decode(const Node& node, bool& rhs);
+
   YAML_CPP_API static bool decodex(const Node& node);
 };
 
@@ -274,6 +283,22 @@ struct convert<std::map<K, V, C, A>> {
       node.force_insert(element.first, element.second);
     return node;
   }
+
+  static bool decode(const Node& node, std::map<K, V, C, A>& rhs) {
+    if (!node.IsMap())
+      return false;
+
+    rhs.clear();
+    for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+      // workaround for GCC 3:
+      rhs[element.first.template as<K>()] = element.second.template as<V>();
+#else
+      rhs[element.first.as<K>()] = element.second.as<V>();
+#endif
+    return true;
+  }
+
 
   static std::map<K, V, C, A> decodex(const Node& node) {
     if (!node.IsMap())
@@ -299,6 +324,22 @@ struct convert<std::unordered_map<K, V, H, P, A>> {
     for (const auto& element : rhs)
       node.force_insert(element.first, element.second);
     return node;
+  }
+
+
+  static bool decode(const Node& node, std::unordered_map<K, V, H, P, A>& rhs) {
+    if (!node.IsMap())
+      return false;
+
+    rhs.clear();
+    for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+      // workaround for GCC 3:
+      rhs[element.first.template as<K>()] = element.second.template as<V>();
+#else
+      rhs[element.first.as<K>()] = element.second.as<V>();
+#endif
+    return true;
   }
 
   static std::unordered_map<K, V, H, P, A> decodex(const Node& node) {
@@ -327,6 +368,21 @@ struct convert<std::vector<T, A>> {
     return node;
   }
 
+  static bool decode(const Node& node, std::vector<T, A>& rhs) {
+    if (!node.IsSequence())
+      return false;
+
+    rhs.clear();
+    for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+      // workaround for GCC 3:
+      rhs.push_back(element.template as<T>());
+#else
+      rhs.push_back(element.as<T>());
+#endif
+    return true;
+  }
+
   static std::vector<T, A> decodex(const Node& node) {
     if (!node.IsSequence())
       throw YAML::conversion::DecodeException();
@@ -351,6 +407,21 @@ struct convert<std::list<T,A>> {
     for (const auto& element : rhs)
       node.push_back(element);
     return node;
+  }
+
+  static bool decode(const Node& node, std::list<T,A>& rhs) {
+    if (!node.IsSequence())
+      return false;
+
+    rhs.clear();
+    for (const auto& element : node)
+#if defined(__GNUC__) && __GNUC__ < 4
+      // workaround for GCC 3:
+      rhs.push_back(element.template as<T>());
+#else
+      rhs.push_back(element.as<T>());
+#endif
+    return true;
   }
 
   static std::list<T,A> decodex(const Node& node) {
@@ -378,6 +449,22 @@ struct convert<std::array<T, N>> {
       node.push_back(element);
     }
     return node;
+  }
+
+  static bool decode(const Node& node, std::array<T, N>& rhs) {
+    if (!isNodeValid(node)) {
+      return false;
+    }
+
+    for (auto i = 0u; i < node.size(); ++i) {
+#if defined(__GNUC__) && __GNUC__ < 4
+      // workaround for GCC 3:
+      rhs[i] = node[i].template as<T>();
+#else
+      rhs[i] = node[i].as<T>();
+#endif
+    }
+    return true;
   }
 
   static std::array<T, N> decodex(const Node& node) {
@@ -412,6 +499,29 @@ struct convert<std::pair<T, U>> {
     return node;
   }
 
+
+  static bool decode(const Node& node, std::pair<T, U>& rhs) {
+    if (!node.IsSequence())
+      return false;
+    if (node.size() != 2)
+      return false;
+
+#if defined(__GNUC__) && __GNUC__ < 4
+    // workaround for GCC 3:
+    rhs.first = node[0].template as<T>();
+#else
+    rhs.first = node[0].as<T>();
+#endif
+#if defined(__GNUC__) && __GNUC__ < 4
+    // workaround for GCC 3:
+    rhs.second = node[1].template as<U>();
+#else
+    rhs.second = node[1].as<U>();
+#endif
+    return true;
+  }
+
+
   static std::pair<T, U> decodex(const Node& node) {
     if (!node.IsSequence() || node.size() != 2)
       throw YAML::conversion::DecodeException();
@@ -438,6 +548,18 @@ template <>
 struct convert<Binary> {
   static Node encode(const Binary& rhs) {
     return Node(EncodeBase64(rhs.data(), rhs.size()));
+  }
+
+  static bool decode(const Node& node, Binary& rhs) {
+    if (!node.IsScalar())
+      return false;
+
+    std::vector<unsigned char> data = DecodeBase64(node.Scalar());
+    if (data.empty() && !node.Scalar().empty())
+      return false;
+
+    rhs.swap(data);
+    return true;
   }
 
   static Binary decodex(const Node& node) {
