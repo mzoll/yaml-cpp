@@ -82,7 +82,6 @@ using ::testing::Eq;
 namespace YAML {
 
 //define custom convert structs
-
 template<>
 struct convert<Vec3> {
   static Node encode(const Vec3& rhs) {
@@ -107,11 +106,11 @@ struct convert<Vec3> {
 
 template <>
 struct convert<NonDefCtorVec3> {
-//  static Node encode(const NonDefCtorVec3& rhs) {
-//    return convert<Vec3>::encode(rhs);
-//  }
+  static Node encode(const NonDefCtorVec3& rhs) {
+    return convert<Vec3>::encode(rhs);
+  }
 
-  static NonDefCtorVec3 decodex(const Node& node) {
+  static NonDefCtorVec3 decode(const Node& node) {
     if (!node.IsSequence() || node.size() != 3) {
       throw YAML::conversion::DecodeException();
     }
