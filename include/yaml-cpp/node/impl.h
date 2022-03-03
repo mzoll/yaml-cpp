@@ -90,11 +90,11 @@ inline NodeType::value Node::Type() const {
 
 //detect the method of the new api
 template <typename>
-std::false_type has_decodex (long);
+std::false_type has_decode_new_api(long);
 
 template <typename T>
-auto has_decodex (int)
-    -> decltype( T::decodex(std::declval<const Node&>()), std::true_type{});
+auto has_decode_new_api(int)
+    -> decltype( T::decode(std::declval<const Node&>()), std::true_type{});
 
 //shim to emulate constexpr-if, which is a feature of c++17
 #if __cplusplus < 201703L || (defined(_MSVC_LANG) && _MSVC_LANG < 201703L)
@@ -105,18 +105,18 @@ auto has_decodex (int)
 template <bool AorB>
 struct static_switch;
 
-template<>
+template<> //new api
 struct static_switch<true> {
   template<class T>
-  static T call(Node node) {
-    return convert<T>::decodex(node);
+  static T call(const Node& node) {
+    return convert<T>::decode(node);
   }
 };
 
 template<>  //old api
 struct static_switch<false> {
   template<class T>
-  static T call(Node node) {
+  static T call(const Node& node) {
     T t;
     if (convert<T>::decode(node, t))
       return t;
@@ -138,7 +138,7 @@ struct as_if {
 
     try {
 #ifdef PRE_CPP17_SHIM
-      return static_switch<decltype(has_decodex<convert<T>>(
+      return static_switch<decltype(has_decode_new_api<convert<T>>(
           0))::value>::template call<T>(node);
 #else
       if constexpr (decltype(has_decodex<convert<T>>(0))::value >)
@@ -207,7 +207,7 @@ struct as_if<T, void> {
 
     try {
 #ifdef PRE_CPP17_SHIM
-      return static_switch<decltype(has_decodex<convert<T>>(
+      return static_switch<decltype(has_decode_new_api<convert<T>>(
           0))::value>::template call<T>(node);
 #else
       if constexpr (decltype(has_decodex<convert<T>>(0))::value >)
